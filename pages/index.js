@@ -5,30 +5,44 @@ import { VStack, IconButton, useColorMode } from '@chakra-ui/react';
 import { FaSun, FaMoon } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
 
-export default function Home() {
+function Home({todoss}) {
 
   const [todos, setTodos] = useState(
     () => {
-      if(typeof window !== 'undefined')
-        return JSON.parse(localStorage.getItem('todos'))
-      else 
-        return []
+        return todoss;
     }
   );
 
-  useEffect(() => {
-    localStorage.setItem('todos', JSON.stringify(todos));
-  }, [todos]);
+  async function deleteTodo(id) {
 
-  function deleteTodo(id) {
+    try {
+        const deleted = await fetch(`http://localhost:3000/api/todos?id=${id}`, {
+            method: "Delete"
+        });
+
+    } catch (error) {
+        console.log(error)
+    }
     const newTodos = todos.filter((todo) => {
       return todo.id !== id;
     });
     setTodos(newTodos);
   }
 
-  function addTodo(todo) {
+  async function addTodo(todo) {
     setTodos([...todos, todo]);
+    try {
+        const res = await fetch('http://localhost:3000/api/todos', {
+            method: 'POST',
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(todo)
+        })
+    } catch (error) {
+        console.log(error);
+    }
   }
 
   const { colorMode, toggleColorMode } = useColorMode();
@@ -56,3 +70,13 @@ export default function Home() {
     </VStack>
   )
 }
+
+Home.getInitialProps = async () => {
+  const res = await fetch(`http://localhost:3000/api/todos`);
+  const data  = await res.json();
+  
+  return { todoss: data }
+}
+
+
+export default Home;
